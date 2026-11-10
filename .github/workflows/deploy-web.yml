@@ -1,0 +1,37 @@
+# Builds the web version and publishes it to the gh-pages branch, which GitHub Pages serves at
+# https://erhxyun.github.io/DATA890-Sleep-Recommendation-Sleep/
+name: Deploy web to GitHub Pages
+
+on:
+  push:
+    branches: [Xiyun-Web-Interface]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build:web
+
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          commit_message: Deploy web build

@@ -22,6 +22,11 @@ for the intended layout.
 To try it on an iPhone, install **Expo Go**, run `npx expo start`, and scan the QR code
 (phone and computer on the same Wi-Fi).
 
+**Live demo:** https://erhxyun.github.io/DATA890-Sleep-Recommendation-Sleep/ — rebuilt and
+redeployed automatically on every push to `Xiyun-Web-Interface`
+(`.github/workflows/deploy-web.yml`, published to the `gh-pages` branch). To build the same
+static site locally, run `npm run build:web` (output in `dist/`).
+
 Before committing, run:
 
 ```bash
