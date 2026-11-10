@@ -3,11 +3,12 @@ import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { FontFamily, Spacing } from '@/constants/theme';
+import { DEVICE_LABEL } from '@/data/demo';
 import type { DataSource } from '@/data/types';
 import { useTheme } from '@/hooks/use-theme';
 
 const SOURCE_META: Record<DataSource, { label: string; icon: SymbolViewProps['name'] }> = {
-  watch: { label: 'Apple Watch', icon: { ios: 'applewatch', android: 'watch', web: 'watch' } },
+  watch: { label: DEVICE_LABEL, icon: { ios: 'applewatch', android: 'watch', web: 'watch' } },
   journal: {
     label: 'Sleep journal',
     icon: { ios: 'book.closed', android: 'edit_note', web: 'edit_note' },

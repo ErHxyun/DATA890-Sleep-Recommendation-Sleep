@@ -1,0 +1,11 @@
+id,recommendation,target_nodes,suggested_trigger,trigger,data_needed,data_available,level,evidence,in_draft,confirmed,notes
+r01,Keep the same sleep and wake times every day,routine_consistency,"Bed or wake time varies by more than 60 min across the last 7 nights",,Watch bed / wake times,yes,coach,,yes,,
+r02,Build a relaxing bedtime routine,routine_consistency,"Evening check-in: work / screens in the hour before bed on most nights",,Evening check-in routine,yes,coach,,yes,,
+r03,Use the bed only for sleep and sex,routine_consistency,Takes a long time to fall asleep on most nights,,New journal question needed,no,coach,,yes,,Stimulus control; needs a new question
+r04,Shift your schedule by no more than 1 hour at a time,circadian_rhythm,Bedtime moved by more than 1 hour versus the previous night,,Watch bed times,yes,coach,,yes,,
+r05,Keep naps to 20 minutes or less,naps,Nap longer than 20 minutes logged,,Evening check-in nap minutes,yes,coach,,yes,,
+r06,Avoid alcohol near bedtime,alcohol,"Alcohol logged and deep sleep / HRV worse on those nights",,"Evening check-in alcohol; watch sleep, HRV",yes,coach,"Strüven et al. 2025; De Rosa et al. 2025",yes,,
+r07,"Keep the bedroom cool, dark, and quiet","environment; melatonin",Noise / light / temperature selected as a disturbance,,Morning check-in disturbances,partly,coach,,yes,,
+r08,Check medication timing with your clinician / prescriber,medications,Medication logged and sleep problems persist,,Evening check-in medications,partly,clinician,,yes,,Refer rather than advise
+r09,Limit caffeine later in the day,caffeine,Afternoon or evening caffeine logged,,Evening check-in caffeine timing,yes,coach,,inferred,,Draft lists caffeine dose and timing but no recommendation box
+r10,Get daylight in the morning; dim screens in the evening,"sunlight_blue_light; screens",Screens in the hour before bed on most nights,,Evening check-in routine,partly,coach,,inferred,,Draft has sunlight / blue light but no recommendation box

@@ -1,0 +1,17 @@
+id,label,type,properties,measurable,data_sources,status,notes
+sleep,Sleep,outcome,,yes,"PMData sleep.json; LifeSnaps daily CSV; morning check-in",from_draft,Central node
+hypnogram,Hypnogram,measurement,"sleep stages; linked to cortisol and melatonin rhythms; 1-2 awakenings per night is normal",yes,"PMData sleep.json (stages); LifeSnaps stage ratios",from_draft,
+sleep_drive,Sleep drive (adenosine),mechanism,builds with time awake,no,,from_draft,Explanatory only; not measured
+atp,ATP,mechanism,breaks down to adenosine during wakefulness,no,,from_draft,Explanatory only; thick line to sleep drive in draft
+circadian_rhythm,Circadian rhythm,mechanism,~24 h cycle,partly,"Baigutanova MEQ (chronotype); bed/wake timing",from_draft,
+melatonin,Melatonin,mechanism,,no,,from_draft,"Draft note: same as sleep recs (cool, dark, quiet)"
+caffeine,Caffeine,behavior,"dose; timing; structurally similar to adenosine",yes,"Evening check-in (timing, cups)",from_draft,No daily caffeine in public datasets
+naps,Naps,behavior,"timing; duration",yes,Evening check-in (nap minutes),from_draft,
+alcohol,Alcohol,behavior,central nervous system depressant,yes,"PMData reporting.csv alcohol_consumed; evening check-in",from_draft,
+exercise,Exercise,behavior,,yes,"PMData srpe.csv; LifeSnaps active minutes; evening check-in",from_draft,
+sunlight_blue_light,Sunlight / blue light,behavior,,partly,"Evening check-in (screens); Baigutanova ambient light; LifeSnaps OUTDOORS EMA",from_draft,
+environment,Environment,behavior,"cool; dark; quiet",partly,"Morning check-in (disturbances); Baigutanova ambient light",from_draft,
+routine_consistency,Routine / consistency,behavior,,yes,"Watch bed/wake times (day-to-day variation); evening check-in routine",from_draft,
+medications,Medications,behavior,timing,partly,Evening check-in (free text),from_draft,Route to clinician rather than coach
+stress_mood,Stress / mood,state,,yes,"PMData wellness.csv; LifeSnaps EMA; Baigutanova PHQ-9 / GAD-7",proposed,Not in draft; proposed for review
+screens,Screens before bed,behavior,,yes,Evening check-in,proposed,"Not in draft; could be part of sunlight / blue light"

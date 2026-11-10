@@ -1,0 +1,26 @@
+id,source,target,suggested_relation,relation,condition,suggested_mechanism,evidence,in_draft,confirmed,notes
+e01,atp,sleep_drive,increases,,during wakefulness,ATP use produces adenosine that builds sleep pressure,,yes,,Thick line in draft
+e02,sleep_drive,sleep,increases,,,Higher sleep pressure makes it easier to fall and stay asleep,,yes,,
+e03,caffeine,sleep_drive,decreases,,dose and timing (e.g. afternoon / evening),Blocks adenosine receptors (structurally similar to adenosine),,yes,,
+e04,caffeine,sleep,disrupts,,dose and timing,Longer time to fall asleep; less deep sleep,,yes,,
+e05,naps,sleep_drive,decreases,,long or late naps,Releases sleep pressure before bedtime,,yes,,
+e06,naps,sleep,disrupts,,duration > 20 min or late in the day,,,yes,,
+e07,alcohol,sleep,disrupts,,near bedtime,Sedating at first; fragments sleep and suppresses REM later in the night,"Strüven et al. 2025; De Rosa et al. 2025",yes,,
+e08,alcohol,hypnogram,disrupts,,near bedtime,More awakenings and less REM in the second half of the night,,inferred,,
+e09,exercise,sleep,supports,,regular; timing may matter,,,yes,,
+e10,exercise,sleep_drive,increases,,,,,inferred,,
+e11,sunlight_blue_light,circadian_rhythm,regulates,,morning light vs evening light,Morning light anchors the clock; evening light delays it,,yes,,
+e12,sunlight_blue_light,melatonin,decreases,,evening / night exposure,Light suppresses melatonin release,,yes,,
+e13,circadian_rhythm,sleep,regulates,,,Sets the timing of sleep and wake,,yes,,
+e14,circadian_rhythm,melatonin,regulates,,,Melatonin rises in the evening on the body clock,,inferred,,
+e15,melatonin,sleep,supports,,,Signals night to the body,,yes,,
+e16,environment,melatonin,supports,,dark room,"Draft note: same as sleep recs (cool, dark, quiet)",,yes,,
+e17,environment,sleep,supports,,"cool, dark, quiet",,,yes,,
+e18,environment,hypnogram,disrupts,,"noise, light, heat",,,yes,,Red line in draft
+e19,routine_consistency,circadian_rhythm,supports,,same sleep / wake times,,,yes,,
+e20,routine_consistency,sleep,supports,,,,,yes,,
+e21,medications,sleep,associated_with,,depends on drug and timing,Can help or disrupt; needs prescriber input,,yes,,
+e22,sleep,hypnogram,measured_by,,,Watch estimates sleep stages,,yes,,
+e23,stress_mood,sleep,disrupts,,,Bidirectional with poor sleep,Sutton 2014,proposed,,Not in draft
+e24,sleep,stress_mood,associated_with,,,Poor sleep can worsen mood,Sutton 2014,proposed,,Not in draft
+e25,screens,sunlight_blue_light,increases,,last hour before bed,Screens add evening light exposure,,proposed,,Not in draft

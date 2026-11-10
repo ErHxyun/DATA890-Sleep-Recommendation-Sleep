@@ -75,21 +75,23 @@ export function RecommendationCard({ recommendation }: { recommendation: Recomme
             </View>
           </View>
 
-          <View style={styles.section}>
-            <ThemedText type="smallBold">What the research says</ThemedText>
-            {recommendation.evidence.map((item) => (
-              <View
-                key={item.citation}
-                style={[styles.evidence, { borderLeftColor: Palette.green }]}>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {item.finding}
-                </ThemedText>
-                <ThemedText type="smallBold" style={styles.citation}>
-                  {item.citation}
-                </ThemedText>
-              </View>
-            ))}
-          </View>
+          {recommendation.evidence.length > 0 && (
+            <View style={styles.section}>
+              <ThemedText type="smallBold">What the research says</ThemedText>
+              {recommendation.evidence.map((item) => (
+                <View
+                  key={item.citation}
+                  style={[styles.evidence, { borderLeftColor: Palette.green }]}>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {item.finding}
+                  </ThemedText>
+                  <ThemedText type="smallBold" style={styles.citation}>
+                    {item.citation}
+                  </ThemedText>
+                </View>
+              ))}
+            </View>
+          )}
 
           <View
             style={[

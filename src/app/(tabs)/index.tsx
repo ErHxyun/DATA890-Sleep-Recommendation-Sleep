@@ -21,7 +21,8 @@ import { alignMorningCheckIn } from '@/data/alignment';
 import { buildHistory, type WatchNight } from '@/data/history';
 import { interpretVital, type VitalId } from '@/data/interpretation';
 import { useCheckIns } from '@/data/journal-store';
-import { lastNight, todaysRecommendation } from '@/data/mock';
+import { DEMO_NOTE, HRV_METRIC, lastNight } from '@/data/demo';
+import { todaysRecommendation } from '@/data/recommend';
 import {
   asleepMinutes,
   formatClock,
@@ -69,13 +70,14 @@ export default function TodayScreen() {
   const trendNights = history.slice(-TREND_NIGHTS);
 
   /** Last night vs. the usual range of the nights before it, for one vital. */
+  /** `describe` turns last night's distance from the usual mean into text, e.g. "+4 bpm vs usual". */
   function compare(pick: (w: WatchNight) => number, describe: (delta: number) => string) {
     const values = trendNights.map((n) => pick(n.watch));
     const latest = values[values.length - 1];
     const range = usualRange(values.slice(0, -1));
     const outside = latest < range.low || latest > range.high;
     return {
-      comparison: outside ? `${describe(latest - range.mean)} vs usual` : 'In your usual range',
+      comparison: outside ? describe(latest - range.mean) : 'In your usual range',
       flagged: outside,
     };
   }
@@ -88,15 +90,15 @@ export default function TodayScreen() {
   }[] = [
     {
       id: 'hrv',
-      pick: (w) => w.hrvSdnnMs,
+      pick: (w) => w.hrvMs,
       format: (v) => `${Math.round(v)} ms`,
       tile: {
-        label: 'HRV (SDNN)',
-        value: `${lastNight.hrvSdnnMs}`,
+        label: `HRV (${HRV_METRIC})`,
+        value: `${Math.round(lastNight.hrvMs)}`,
         unit: 'ms',
         ...compare(
-          (w) => w.hrvSdnnMs,
-          (d) => percentChange(lastNight.hrvSdnnMs, lastNight.hrvSdnnMs - d),
+          (w) => w.hrvMs,
+          (d) => `${percentChange(lastNight.hrvMs, lastNight.hrvMs - d)} vs usual`,
         ),
         icon: { ios: 'waveform.path.ecg', android: 'ecg_heart', web: 'ecg_heart' },
         iconColor: Palette.lavender,
@@ -109,11 +111,11 @@ export default function TodayScreen() {
       format: (v) => `${Math.round(v)} bpm`,
       tile: {
         label: 'Resting heart rate',
-        value: `${lastNight.restingHr}`,
+        value: `${Math.round(lastNight.restingHr)}`,
         unit: 'bpm',
         ...compare(
           (w) => w.restingHr,
-          (d) => `${d > 0 ? '+' : '−'}${Math.abs(Math.round(d))} bpm`,
+          (d) => `${d > 0 ? '+' : '−'}${Math.abs(Math.round(d))} bpm vs usual`,
         ),
         icon: { ios: 'heart.fill', android: 'favorite', web: 'favorite' },
         iconColor: Palette.orange,
@@ -130,7 +132,7 @@ export default function TodayScreen() {
         unit: 'br/min',
         ...compare(
           (w) => w.respiratoryRate,
-          (d) => `${d > 0 ? '+' : '−'}${Math.abs(d).toFixed(1)} br/min`,
+          (d) => `${d > 0 ? '+' : '−'}${Math.abs(d).toFixed(1)} br/min vs usual`,
         ),
         icon: { ios: 'lungs.fill', android: 'pulmonology', web: 'pulmonology' },
         iconColor: Palette.green,
@@ -147,7 +149,8 @@ export default function TodayScreen() {
         unit: '°C',
         ...compare(
           (w) => w.wristTempDeltaC,
-          (d) => `${d > 0 ? '+' : '−'}${Math.abs(d).toFixed(1)} °C`,
+          // The value is already a deviation from baseline, so name the direction only.
+          (d) => (d > 0 ? 'Above your usual range' : 'Below your usual range'),
         ),
         icon: { ios: 'thermometer.medium', android: 'thermometer', web: 'thermometer' },
         iconColor: '#C99A1E',
@@ -185,8 +188,8 @@ export default function TodayScreen() {
             How did you sleep?
           </ThemedText>
           <ThemedText themeColor="textSecondary" style={[styles.center, styles.lockedText]}>
-            Tell us how last night felt first. Then we&apos;ll show what your Apple Watch measured,
-            side by side with your answers.
+            Tell us how last night felt first. Then we&apos;ll show what your watch measured, side
+            by side with your answers.
           </ThemedText>
           <PrimaryButton
             label="Start morning check-in"
@@ -249,7 +252,7 @@ export default function TodayScreen() {
         <AlignmentCard rows={alignMorningCheckIn(checkIns.morning.answers, lastNight)} />
       )}
 
-      <RecommendationCard recommendation={todaysRecommendation} />
+      <RecommendationCard recommendation={todaysRecommendation(history)} />
 
       <ThemedText type="heading" style={styles.sectionLabel}>
         Overnight vitals
@@ -296,6 +299,9 @@ export default function TodayScreen() {
       <ThemedText type="small" themeColor="textSecondary" style={styles.disclaimer}>
         Sleep by Science offers behavioral sleep coaching and is not a medical device. Wearable
         sleep stages are estimates and can differ from a clinical sleep study.
+      </ThemedText>
+      <ThemedText type="small" themeColor="textSecondary" style={styles.disclaimer}>
+        {DEMO_NOTE}
       </ThemedText>
     </Screen>
   );

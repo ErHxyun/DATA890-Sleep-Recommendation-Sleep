@@ -27,7 +27,7 @@ import {
   type Question,
 } from '@/data/journal-questions';
 import { saveCheckIn, useCheckIns } from '@/data/journal-store';
-import { lastNight } from '@/data/mock';
+import { lastNight } from '@/data/demo';
 import { useTheme } from '@/hooks/use-theme';
 
 /** Opened from a deep link there's nothing to go back to, so fall back to Today. */
@@ -264,7 +264,7 @@ function DoneView({
           </ThemedText>
           <ThemedText themeColor="textSecondary" style={styles.center}>
             {kind === 'morning'
-              ? 'Here’s how your answers line up with what your Apple Watch measured last night.'
+              ? 'Here’s how your answers line up with what your watch measured last night.'
               : 'Today’s habits will be linked to tonight’s sleep data, so you can see what helps.'}
           </ThemedText>
         </View>

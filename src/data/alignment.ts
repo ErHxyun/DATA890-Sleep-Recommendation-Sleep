@@ -38,12 +38,9 @@ export function alignMorningCheckIn(
   answers: Record<string, Answer>,
   night: NightSummary,
 ): AlignmentRow[] {
-  // The first awake segment is falling asleep; later ones are night wakings.
-  const wakings = night.segments.slice(1).filter((segment) => segment.stage === 'awake');
-  const watchAwakeMinutes = wakings.reduce(
-    (sum, segment) => sum + minutesBetween(segment.start, segment.end),
-    0,
-  );
+  // The device's own wake count, which leaves out the brief blips people don't notice.
+  const watchWakings = night.wakings;
+  const watchAwakeMinutes = night.awakeMinutes;
   const nightWaking = answers.nightWaking as Record<string, number> | undefined;
   const totalSleep = answers.totalSleep as Record<string, number> | undefined;
 
@@ -81,13 +78,13 @@ export function alignMorningCheckIn(
   }
 
   if (nightWaking?.times !== undefined) {
-    const diff = nightWaking.times - wakings.length;
+    const diff = nightWaking.times - watchWakings;
     const agrees = Math.abs(diff) <= TOLERANCE.wakings;
     rows.push({
       id: 'wakings',
       label: 'Times awake',
       self: `${nightWaking.times}×`,
-      watch: `${wakings.length}×`,
+      watch: `${watchWakings}×`,
       difference: agrees ? '' : signedCount(diff),
       agrees,
     });

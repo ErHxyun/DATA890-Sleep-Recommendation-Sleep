@@ -7,10 +7,19 @@
  *   placeholder wording until the clinical lead reviews it, so it ships marked as pending.
  */
 
+import { sameParticipant, type DemoField } from './demo';
 import type { Behavior, NightRecord, WatchNight } from './history';
 import { usualRange } from './sleep-math';
 
 export type VitalId = 'hrv' | 'restingHr' | 'respiratory' | 'wristTemp';
+
+/** Where each vital's data comes from, for checking it against the journal's source. */
+const VITAL_FIELDS: Record<VitalId, DemoField> = {
+  hrv: 'hrvMs',
+  restingHr: 'restingHr',
+  respiratory: 'respiratoryRate',
+  wristTemp: 'wristTempDeltaC',
+};
 
 /** Which direction away from usual is the one people usually care about. */
 type Concern = 'low' | 'high';
@@ -35,7 +44,7 @@ const CONTENT: Record<VitalId, VitalContent> = {
     about:
       'Heart rate variability is the small variation in time between heartbeats. Higher usually means your body is more recovered. It varies a lot between people, so compare it with your own range, not anyone else’s.',
     keepInMind:
-      'Apple Watch reports SDNN from short readings during the night, which is noisier than lab measurements. The trend over a week or more matters more than any single night.',
+      'Watches estimate HRV from short readings during the night (Apple Watch reports SDNN, Fitbit reports RMSSD), which is noisier than lab measurements, and the two metrics can’t be compared directly. The trend over a week or more matters more than any single night.',
     checkIn:
       'If your HRV stays well below your usual range for more than a week and you also feel unwell or exhausted, consider talking with your primary care provider.',
     linkedHabits: {
@@ -188,7 +197,11 @@ export function interpretVital({
   // backed by the user's own nights with and without that habit where possible.
   const lastEvening = trendNights[trendNights.length - 1].behaviors;
   const reasons: string[] = [];
-  if (!lastEvening) {
+  if (!sameParticipant(VITAL_FIELDS[id], 'behaviors')) {
+    reasons.push(
+      `In this demo, ${content.name === 'HRV' ? 'HRV' : content.name.toLowerCase()} comes from a different study participant than the sleep journal, so it isn’t linked to logged habits. With one person’s watch and journal, this section shows which habits line up with changes.`,
+    );
+  } else if (!lastEvening) {
     reasons.push(
       'Log your evening check-in to see which habits might be linked to changes like this.',
     );
@@ -199,15 +212,19 @@ export function interpretVital({
     ][]) {
       if (!lastEvening[habit] || (side && link.pushes !== side)) continue;
       const withHabit = allNights.filter((n) => n.behaviors?.[habit]).map((n) => pick(n.watch));
+      // Nights where the habit wasn't asked about belong to neither group.
       const without = allNights
-        .filter((n) => n.behaviors && !n.behaviors[habit])
+        .filter((n) => n.behaviors?.[habit] === false)
         .map((n) => pick(n.watch));
       let personal = '';
       if (withHabit.length >= 3 && without.length >= 3) {
         const diff =
           withHabit.reduce((a, b) => a + b, 0) / withHabit.length -
           without.reduce((a, b) => a + b, 0) / without.length;
-        personal = ` In your own data, nights after ${HABIT_NAMES[habit]} averaged ${format(Math.abs(diff)).replace(/^\+/, '')} ${diff < 0 ? 'lower' : 'higher'} (${withHabit.length} nights).`;
+        const amount = format(Math.abs(diff)).replace(/^\+/, '');
+        personal = /^0(\.0)? /.test(amount)
+          ? ` In your own data, nights after ${HABIT_NAMES[habit]} looked about the same (${withHabit.length} nights).`
+          : ` In your own data, nights after ${HABIT_NAMES[habit]} averaged ${amount} ${diff < 0 ? 'lower' : 'higher'} (${withHabit.length} nights).`;
       }
       reasons.push(
         side

@@ -1,6 +1,7 @@
 import type { SymbolViewProps } from 'expo-symbols';
 
 import { TOLERANCE } from './alignment';
+import { sameParticipant, type DemoField } from './demo';
 import type { Behavior, NightRecord, SelfReport, WatchNight } from './history';
 import { minutesBetween } from './sleep-math';
 
@@ -22,49 +23,53 @@ const ALIGNMENT_METRICS: {
   label: string;
   unit: AlignmentMetric['unit'];
   tolerance: number;
-  gap: (self: SelfReport, watch: WatchNight) => number;
+  /** null when the self-report doesn't include this measure. */
+  gap: (self: SelfReport, watch: WatchNight) => number | null;
 }[] = [
   {
     id: 'totalSleep',
     label: 'Total sleep',
     unit: 'minutes',
     tolerance: TOLERANCE.totalSleepMinutes,
-    gap: (s, w) => s.totalSleepMinutes - w.asleepMinutes,
+    gap: (s, w) =>
+      s.totalSleepMinutes === undefined ? null : s.totalSleepMinutes - w.asleepMinutes,
   },
   {
     id: 'bedtime',
     label: 'Bedtime',
     unit: 'minutes',
     tolerance: TOLERANCE.clockMinutes,
-    gap: (s, w) => minutesBetween(w.bedtime, s.bedtime),
+    gap: (s, w) => (s.bedtime ? minutesBetween(w.bedtime, s.bedtime) : null),
   },
   {
     id: 'outOfBed',
     label: 'Out of bed',
     unit: 'minutes',
     tolerance: TOLERANCE.clockMinutes,
-    gap: (s, w) => minutesBetween(w.outOfBed, s.outOfBed),
+    gap: (s, w) => (s.outOfBed ? minutesBetween(w.outOfBed, s.outOfBed) : null),
   },
   {
     id: 'wakings',
     label: 'Times awake',
     unit: 'count',
     tolerance: TOLERANCE.wakings,
-    gap: (s, w) => s.wakings - w.wakings,
+    gap: (s, w) => (s.wakings === undefined ? null : s.wakings - w.wakings),
   },
   {
     id: 'awakeMinutes',
     label: 'Time awake',
     unit: 'minutes',
     tolerance: TOLERANCE.awakeMinutes,
-    gap: (s, w) => s.awakeMinutes - w.awakeMinutes,
+    gap: (s, w) => (s.awakeMinutes === undefined ? null : s.awakeMinutes - w.awakeMinutes),
   },
 ];
 
 export function alignmentSummary(nights: NightRecord[]): AlignmentMetric[] {
   const paired = nights.filter((night) => night.self !== null);
   return ALIGNMENT_METRICS.map((metric) => {
-    const gaps = paired.map((night) => metric.gap(night.self as SelfReport, night.watch));
+    const gaps = paired
+      .map((night) => metric.gap(night.self as SelfReport, night.watch))
+      .filter((gap): gap is number => gap !== null);
     return {
       id: metric.id,
       label: metric.label,
@@ -109,16 +114,25 @@ export const BEHAVIORS: Record<
   },
 };
 
-export type OutcomeId = 'asleep' | 'deep' | 'hrv';
+export type OutcomeId = 'asleep' | 'deep' | 'restingHr' | 'hrv';
 
-/** Watch outcomes compared across behaviors; for all three, higher is generally better. */
+/**
+ * Watch outcomes compared across behaviors. `field` says which dataset the value comes
+ * from; an outcome is only compared with habits logged by the same person.
+ */
 export const OUTCOMES: Record<
   OutcomeId,
-  { label: string; unit: string; pick: (w: WatchNight) => number }
+  { label: string; unit: string; field: DemoField; pick: (w: WatchNight) => number }
 > = {
-  asleep: { label: 'Total sleep', unit: 'min', pick: (w) => w.asleepMinutes },
-  deep: { label: 'Deep sleep', unit: 'min', pick: (w) => w.deepMinutes },
-  hrv: { label: 'HRV', unit: 'ms', pick: (w) => w.hrvSdnnMs },
+  asleep: { label: 'Total sleep', unit: 'min', field: 'sleep', pick: (w) => w.asleepMinutes },
+  deep: { label: 'Deep sleep', unit: 'min', field: 'sleep', pick: (w) => w.deepMinutes },
+  restingHr: {
+    label: 'Resting heart rate',
+    unit: 'bpm',
+    field: 'restingHr',
+    pick: (w) => w.restingHr,
+  },
+  hrv: { label: 'HRV', unit: 'ms', field: 'hrvMs', pick: (w) => w.hrvMs },
 };
 
 export type OutcomeComparison = {
@@ -154,15 +168,19 @@ export function patternStrength(pattern: BehaviorPattern) {
 const mean = (values: number[]) => values.reduce((a, b) => a + b, 0) / values.length;
 
 export function behaviorPatterns(nights: NightRecord[]): BehaviorPattern[] {
-  const logged = nights.filter((night) => night.behaviors !== null);
+  const comparable = (Object.keys(OUTCOMES) as OutcomeId[]).filter((outcome) =>
+    sameParticipant(OUTCOMES[outcome].field, 'behaviors'),
+  );
 
   const patterns = (Object.keys(BEHAVIORS) as Behavior[]).flatMap((behavior) => {
+    // Only nights where this habit was actually asked about count, on either side.
+    const logged = nights.filter((night) => night.behaviors?.[behavior] !== undefined);
     const withB = logged.filter((night) => night.behaviors?.[behavior]);
     const withoutB = logged.filter((night) => !night.behaviors?.[behavior]);
     // A comparison needs at least one night on each side.
     if (withB.length === 0 || withoutB.length === 0) return [];
 
-    const outcomes = (Object.keys(OUTCOMES) as OutcomeId[]).map((outcome) => {
+    const outcomes = comparable.map((outcome) => {
       const pick = OUTCOMES[outcome].pick;
       const withMean = mean(withB.map((night) => pick(night.watch)));
       const withoutMean = mean(withoutB.map((night) => pick(night.watch)));
@@ -194,8 +212,8 @@ export function behaviorPatterns(nights: NightRecord[]): BehaviorPattern[] {
 /** One sentence summarizing which way the user's total-sleep estimates lean. */
 export function alignmentTakeaway(nights: NightRecord[]): string {
   const gaps = nights
-    .filter((n) => n.self !== null)
-    .map((n) => (n.self as SelfReport).totalSleepMinutes - n.watch.asleepMinutes);
+    .filter((n) => n.self?.totalSleepMinutes !== undefined)
+    .map((n) => (n.self?.totalSleepMinutes as number) - n.watch.asleepMinutes);
   if (gaps.length === 0)
     return 'Complete a few morning check-ins to compare your own sense of sleep with the watch.';
 
@@ -217,6 +235,7 @@ export function alignmentTakeaway(nights: NightRecord[]): string {
 const OUTCOME_WORDS: Record<OutcomeId, { up: string; down: string }> = {
   asleep: { up: 'longer', down: 'shorter' },
   deep: { up: 'longer', down: 'shorter' },
+  restingHr: { up: 'higher', down: 'lower' },
   hrv: { up: 'higher', down: 'lower' },
 };
 

@@ -21,8 +21,14 @@ export type NightSummary = {
   inBedStart: Date;
   inBedEnd: Date;
   segments: SleepSegment[];
-  /** HKQuantityTypeIdentifierHeartRateVariabilitySDNN, in ms. Apple reports SDNN, not RMSSD. */
-  hrvSdnnMs: number;
+  /** Awakenings after first falling asleep, as the device counts them (short blips excluded). */
+  wakings: number;
+  awakeMinutes: number;
+  /**
+   * Overnight HRV in ms. Apple Watch reports SDNN (HKQuantityTypeIdentifierHeartRateVariabilitySDNN);
+   * Fitbit reports RMSSD. The two are not interchangeable, so the metric is labelled in the UI.
+   */
+  hrvMs: number;
   /** HKQuantityTypeIdentifierRestingHeartRate, in bpm. */
   restingHr: number;
   /** HKQuantityTypeIdentifierRespiratoryRate during sleep, breaths/min. */

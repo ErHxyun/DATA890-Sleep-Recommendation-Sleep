@@ -9,6 +9,7 @@ import { SleepAlignmentChart } from '@/components/insights/sleep-alignment-chart
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { FontFamily, Spacing } from '@/constants/theme';
+import { DEMO_NOTE } from '@/data/demo';
 import { buildHistory } from '@/data/history';
 import {
   alignmentSummary,
@@ -79,9 +80,12 @@ export default function InsightsScreen() {
             Nights where your answer and the watch agreed, out of nights with both.
           </ThemedText>
         </View>
-        {alignment.map((metric) => (
-          <AgreementRow key={metric.id} metric={metric} />
-        ))}
+        {alignment
+          // A single night says nothing about how well the two usually agree.
+          .filter((metric) => metric.nights >= 3)
+          .map((metric) => (
+            <AgreementRow key={metric.id} metric={metric} />
+          ))}
         <ThemedText type="small" themeColor="textSecondary">
           A steady gap in one direction is common and worth knowing about. People often
           underestimate how long they sleep when sleep feels poor, and watches can miss quiet
@@ -112,6 +116,9 @@ export default function InsightsScreen() {
       <ThemedText type="small" themeColor="textSecondary" style={styles.disclaimer}>
         These are patterns in your own data, not proof that one thing causes another. Your coaching
         uses them alongside published sleep research.
+      </ThemedText>
+      <ThemedText type="small" themeColor="textSecondary" style={styles.disclaimer}>
+        {DEMO_NOTE}
       </ThemedText>
     </Screen>
   );

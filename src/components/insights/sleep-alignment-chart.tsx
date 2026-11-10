@@ -31,7 +31,7 @@ export function SleepAlignmentChart({ nights }: { nights: NightRecord[] }) {
 
   const values = nights.flatMap((night) => [
     night.watch.asleepMinutes,
-    ...(night.self ? [night.self.totalSleepMinutes] : []),
+    ...(night.self?.totalSleepMinutes !== undefined ? [night.self.totalSleepMinutes] : []),
   ]);
   const minHour = Math.floor(Math.min(...values) / 60);
   const maxHour = Math.ceil(Math.max(...values) / 60);
@@ -44,7 +44,8 @@ export function SleepAlignmentChart({ nights }: { nights: NightRecord[] }) {
     TOP + (1 - (minutes / 60 - minHour) / (maxHour - minHour)) * (PLOT_HEIGHT - TOP);
 
   const night = nights[index];
-  const gap = night.self ? night.self.totalSleepMinutes - night.watch.asleepMinutes : null;
+  const selfMinutes = night.self?.totalSleepMinutes;
+  const gap = selfMinutes !== undefined ? selfMinutes - night.watch.asleepMinutes : null;
 
   const labelEvery = nights.length <= 7 ? 1 : nights.length <= 14 ? 3 : 7;
 
@@ -59,7 +60,7 @@ export function SleepAlignmentChart({ nights }: { nights: NightRecord[] }) {
           <ReadoutValue
             color={theme.seriesSelf}
             label="You"
-            value={night.self ? formatDuration(night.self.totalSleepMinutes) : 'No check-in'}
+            value={selfMinutes !== undefined ? formatDuration(selfMinutes) : 'No check-in'}
           />
           <ReadoutValue
             color={theme.seriesWatch}
@@ -117,7 +118,8 @@ export function SleepAlignmentChart({ nights }: { nights: NightRecord[] }) {
 
             {nights.map((n, i) => {
               const watchY = y(n.watch.asleepMinutes);
-              const selfY = n.self ? y(n.self.totalSleepMinutes) : null;
+              const selfY =
+                n.self?.totalSleepMinutes !== undefined ? y(n.self.totalSleepMinutes) : null;
               const dim = i === index ? 1 : 0.55;
               return (
                 <G key={n.date.toISOString()}>
@@ -199,7 +201,7 @@ export function SleepAlignmentChart({ nights }: { nights: NightRecord[] }) {
 
       <View style={styles.legend}>
         <LegendDot color={theme.seriesSelf} label="Your estimate" />
-        <LegendDot color={theme.seriesWatch} label="Apple Watch" />
+        <LegendDot color={theme.seriesWatch} label="Watch" />
         <View style={styles.legendItem}>
           <View style={[styles.legendLine, { backgroundColor: theme.textSecondary }]} />
           <ThemedText type="small" themeColor="textSecondary">
@@ -222,9 +224,11 @@ export function SleepAlignmentChart({ nights }: { nights: NightRecord[] }) {
               key={n.date.toISOString()}
               cells={[
                 shortDate(n.date),
-                n.self ? formatDuration(n.self.totalSleepMinutes) : '—',
+                n.self?.totalSleepMinutes !== undefined
+                  ? formatDuration(n.self.totalSleepMinutes)
+                  : '—',
                 formatDuration(n.watch.asleepMinutes),
-                n.self
+                n.self?.totalSleepMinutes !== undefined
                   ? formatSignedMinutes(n.self.totalSleepMinutes - n.watch.asleepMinutes)
                   : '—',
               ]}

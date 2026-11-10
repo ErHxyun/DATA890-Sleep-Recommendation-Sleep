@@ -7,6 +7,7 @@ import { IconCircle } from '@/components/icon-circle';
 import { Screen } from '@/components/screen';
 import { ThemedText } from '@/components/themed-text';
 import { Palette, Spacing } from '@/constants/theme';
+import { buildHistory, type NightRecord } from '@/data/history';
 import { CHECK_INS, type CheckInKind } from '@/data/journal-questions';
 import { useCheckIns } from '@/data/journal-store';
 import { formatClock } from '@/data/sleep-math';
@@ -30,15 +31,18 @@ const KIND_META: Record<
   },
 };
 
-/** Mock completion for the past six days: [morning, evening]. */
-const PAST_WEEK: [boolean, boolean][] = [
-  [true, true],
-  [true, false],
-  [true, true],
-  [false, false],
-  [true, true],
-  [true, true],
-];
+/**
+ * [morning, evening] completion for the past six days. A day's morning check-in reports
+ * the night ending that morning; its evening check-in shows up on the next night's record.
+ */
+function pastWeek(history: NightRecord[]): [boolean, boolean][] {
+  return history
+    .slice(-7, -1)
+    .map((night, i, week) => [
+      night.self !== null,
+      (week[i + 1] ?? history[history.length - 1]).behaviors !== null,
+    ]);
+}
 
 export default function JournalScreen() {
   const checkIns = useCheckIns();
@@ -55,14 +59,17 @@ export default function JournalScreen() {
         />
       ))}
 
-      <WeekStrip today={[!!checkIns.morning, !!checkIns.evening]} />
+      <WeekStrip
+        past={pastWeek(buildHistory(checkIns.morning?.answers))}
+        today={[!!checkIns.morning, !!checkIns.evening]}
+      />
 
       <Card tone="greenSoft">
         <ThemedText type="heading">Why keep a journal?</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          Your Apple Watch measures how you slept, but not why. Caffeine, alcohol, naps, stress, and
-          how rested you feel fill in that picture, and they&apos;re what your coaching
-          recommendations are built on.
+          Your watch measures how you slept, but not why. Caffeine, alcohol, naps, stress, and how
+          rested you feel fill in that picture, and they&apos;re what your coaching recommendations
+          are built on.
         </ThemedText>
       </Card>
     </Screen>
@@ -119,9 +126,9 @@ function CheckInCard({
   );
 }
 
-function WeekStrip({ today }: { today: [boolean, boolean] }) {
+function WeekStrip({ past, today }: { past: [boolean, boolean][]; today: [boolean, boolean] }) {
   const theme = useTheme();
-  const days = [...PAST_WEEK, today].map((entries, index) => {
+  const days = [...past, today].map((entries, index) => {
     const date = new Date();
     date.setDate(date.getDate() - (6 - index));
     return {
