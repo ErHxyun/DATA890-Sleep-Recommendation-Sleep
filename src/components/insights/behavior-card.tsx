@@ -1,4 +1,6 @@
-import { StyleSheet, View } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import { useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/card';
 import { IconCircle } from '@/components/icon-circle';
@@ -28,10 +30,15 @@ function formatValue(value: number, unit: string, signed = false) {
 export function BehaviorCard({ pattern }: { pattern: BehaviorPattern }) {
   const theme = useTheme();
   const meta = BEHAVIORS[pattern.behavior];
+  const [open, setOpen] = useState(false);
 
   return (
     <Card>
-      <View style={styles.header}>
+      <Pressable
+        onPress={() => setOpen((value) => !value)}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        style={({ pressed }) => [styles.header, pressed && styles.pressed]}>
         <IconCircle
           icon={meta.icon}
           background={theme.backgroundSelected}
@@ -44,7 +51,16 @@ export function BehaviorCard({ pattern }: { pattern: BehaviorPattern }) {
             {pattern.nightsWith} nights with · {pattern.nightsWithout} without · {meta.detail}
           </ThemedText>
         </View>
-      </View>
+        <SymbolView
+          name={{
+            ios: open ? 'chevron.up' : 'chevron.down',
+            android: open ? 'expand_less' : 'expand_more',
+            web: open ? 'expand_less' : 'expand_more',
+          }}
+          size={16}
+          tintColor={theme.textSecondary}
+        />
+      </Pressable>
 
       <InsightNote takeaway={patternTakeaway(pattern)} />
 
@@ -54,42 +70,46 @@ export function BehaviorCard({ pattern }: { pattern: BehaviorPattern }) {
         </View>
       )}
 
-      <View style={styles.legend}>
-        <LegendSwatch color={theme.seriesWith} label={`With`} />
-        <LegendSwatch color={theme.seriesWithout} label={`Without`} />
-      </View>
+      {open && (
+        <>
+          <View style={styles.legend}>
+            <LegendSwatch color={theme.seriesWith} label={`With`} />
+            <LegendSwatch color={theme.seriesWithout} label={`Without`} />
+          </View>
 
-      <View style={styles.outcomes}>
-        {pattern.outcomes.map((o) => {
-          const outcome = OUTCOMES[o.outcome];
-          const max = Math.max(o.withMean, o.withoutMean);
-          const diff = Math.round(o.difference);
-          return (
-            <View key={o.outcome} style={styles.outcome}>
-              <View style={styles.outcomeHeader}>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {outcome.label}
-                </ThemedText>
-                <ThemedText type="smallBold">
-                  {diff === 0 ? 'No difference' : formatValue(diff, outcome.unit, true)}
-                </ThemedText>
-              </View>
-              <Bar value={o.withMean} max={max} color={theme.seriesWith} unit={outcome.unit} />
-              <Bar
-                value={o.withoutMean}
-                max={max}
-                color={theme.seriesWithout}
-                unit={outcome.unit}
-              />
-            </View>
-          );
-        })}
-      </View>
+          <View style={styles.outcomes}>
+            {pattern.outcomes.map((o) => {
+              const outcome = OUTCOMES[o.outcome];
+              const max = Math.max(o.withMean, o.withoutMean);
+              const diff = Math.round(o.difference);
+              return (
+                <View key={o.outcome} style={styles.outcome}>
+                  <View style={styles.outcomeHeader}>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {outcome.label}
+                    </ThemedText>
+                    <ThemedText type="smallBold">
+                      {diff === 0 ? 'No difference' : formatValue(diff, outcome.unit, true)}
+                    </ThemedText>
+                  </View>
+                  <Bar value={o.withMean} max={max} color={theme.seriesWith} unit={outcome.unit} />
+                  <Bar
+                    value={o.withoutMean}
+                    max={max}
+                    color={theme.seriesWithout}
+                    unit={outcome.unit}
+                  />
+                </View>
+              );
+            })}
+          </View>
 
-      <View style={styles.sources}>
-        <SourceBadge source="journal" />
-        <SourceBadge source="watch" />
-      </View>
+          <View style={styles.sources}>
+            <SourceBadge source="journal" />
+            <SourceBadge source="watch" />
+          </View>
+        </>
+      )}
     </Card>
   );
 }
@@ -130,6 +150,9 @@ function LegendSwatch({ color, label }: { color: string; label: string }) {
 }
 
 const styles = StyleSheet.create({
+  pressed: {
+    opacity: 0.7,
+  },
   flex: {
     flex: 1,
   },

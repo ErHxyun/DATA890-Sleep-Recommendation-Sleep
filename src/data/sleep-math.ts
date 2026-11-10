@@ -54,3 +54,12 @@ export function usualRange(earlier: number[]) {
   const sd = Math.sqrt(earlier.reduce((a, b) => a + (b - mean) ** 2, 0) / earlier.length);
   return { mean, low: mean - sd, high: mean + sd };
 }
+
+/**
+ * Minutes from midnight of `wakeDate` by the clock (negative the evening before), e.g.
+ * 11:15 PM -> -45. Read from clock fields so daylight-saving nights don't shift by an hour.
+ */
+export function clockMinutes(time: Date, wakeDate: Date) {
+  const minutes = time.getHours() * 60 + time.getMinutes();
+  return time.getDate() === wakeDate.getDate() ? minutes : minutes - 24 * 60;
+}

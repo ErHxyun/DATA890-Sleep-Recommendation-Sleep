@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -7,6 +8,7 @@ import { IconCircle } from '@/components/icon-circle';
 import { SourceBadge } from '@/components/source-badge';
 import { ThemedText } from '@/components/themed-text';
 import { Palette, Spacing } from '@/constants/theme';
+import { setFeedback, useFeedback } from '@/data/feedback-store';
 import type { Recommendation } from '@/data/types';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -14,10 +16,17 @@ import { useTheme } from '@/hooks/use-theme';
  * A coaching recommendation that can always answer "why this, for me?":
  * the personal pattern, the data sources behind it, and the published evidence.
  */
-export function RecommendationCard({ recommendation }: { recommendation: Recommendation }) {
+export function RecommendationCard({
+  recommendation,
+  label = 'Today’s focus',
+}: {
+  recommendation: Recommendation;
+  /** Small heading above the title. */
+  label?: string;
+}) {
   const theme = useTheme();
   const [expanded, setExpanded] = useState(false);
-  const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
+  const feedback = useFeedback()[recommendation.id];
 
   return (
     <Card tone="greenSoft">
@@ -30,7 +39,7 @@ export function RecommendationCard({ recommendation }: { recommendation: Recomme
         />
         <View style={styles.flex}>
           <ThemedText type="smallBold" themeColor="accent">
-            Today&apos;s focus
+            {label}
           </ThemedText>
           <ThemedText type="heading">{recommendation.title}</ThemedText>
         </View>
@@ -109,6 +118,27 @@ export function RecommendationCard({ recommendation }: { recommendation: Recomme
                 : '● Pending clinical review'}
             </ThemedText>
           </View>
+
+          {recommendation.learnTopic && (
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: '/topic/[id]',
+                  params: { id: recommendation.learnTopic as string },
+                })
+              }
+              accessibilityRole="link"
+              style={({ pressed }) => [styles.learnLink, pressed && styles.pressed]}>
+              <ThemedText type="smallBold" themeColor="accent">
+                Learn why this works
+              </ThemedText>
+              <SymbolView
+                name={{ ios: 'arrow.right', android: 'arrow_forward', web: 'arrow_forward' }}
+                size={14}
+                tintColor={theme.accent}
+              />
+            </Pressable>
+          )}
         </View>
       )}
 
@@ -120,12 +150,12 @@ export function RecommendationCard({ recommendation }: { recommendation: Recomme
           <FeedbackButton
             active={feedback === 'up'}
             icon={{ ios: 'hand.thumbsup', android: 'thumb_up', web: 'thumb_up' }}
-            onPress={() => setFeedback('up')}
+            onPress={() => setFeedback(recommendation.id, 'up')}
           />
           <FeedbackButton
             active={feedback === 'down'}
             icon={{ ios: 'hand.thumbsdown', android: 'thumb_down', web: 'thumb_down' }}
-            onPress={() => setFeedback('down')}
+            onPress={() => setFeedback(recommendation.id, 'down')}
           />
         </View>
       </View>
@@ -172,6 +202,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     height: 44,
     borderRadius: 22,
+  },
+  learnLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: Spacing.one,
   },
   pressed: {
     opacity: 0.7,

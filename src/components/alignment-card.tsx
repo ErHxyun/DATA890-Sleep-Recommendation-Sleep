@@ -1,5 +1,6 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/card';
 import { ThemedText } from '@/components/themed-text';
@@ -7,10 +8,24 @@ import { FontFamily, Spacing } from '@/constants/theme';
 import type { AlignmentRow } from '@/data/alignment';
 import { useTheme } from '@/hooks/use-theme';
 
-/** Side-by-side self-report vs. watch for the same night, with the gap between them. */
-export function AlignmentCard({ rows }: { rows: AlignmentRow[] }) {
+/** Rows shown before "Show all" in the compact version. */
+const COMPACT_ROWS = 2;
+
+/**
+ * Side-by-side self-report vs. watch for the same night, with the gap between them.
+ * `compact` shows the first rows and folds the rest and the explanation away.
+ */
+export function AlignmentCard({
+  rows,
+  compact = false,
+}: {
+  rows: AlignmentRow[];
+  compact?: boolean;
+}) {
   const theme = useTheme();
   const matches = rows.filter((row) => row.agrees).length;
+  const [showAll, setShowAll] = useState(!compact);
+  const visible = showAll ? rows : rows.slice(0, COMPACT_ROWS);
 
   return (
     <Card>
@@ -34,7 +49,7 @@ export function AlignmentCard({ rows }: { rows: AlignmentRow[] }) {
           />
         </View>
 
-        {rows.map((row) => (
+        {visible.map((row) => (
           <View key={row.id} style={[styles.row, styles.dataRow, { borderTopColor: theme.border }]}>
             <ThemedText type="small" themeColor="textSecondary" style={styles.labelCell}>
               {row.label}
@@ -57,11 +72,21 @@ export function AlignmentCard({ rows }: { rows: AlignmentRow[] }) {
         ))}
       </View>
 
-      <ThemedText type="small" themeColor="textSecondary">
-        Neither number is “right”. Watches estimate sleep from movement and heart rate, and
-        it&apos;s common to misjudge time awake at night. Both are saved with their source, and the
-        gaps help personalize your coaching.
-      </ThemedText>
+      {compact && rows.length > COMPACT_ROWS && (
+        <Pressable onPress={() => setShowAll((value) => !value)} accessibilityRole="button">
+          <ThemedText type="smallBold" themeColor="accent">
+            {showAll ? 'Show less' : `Show all ${rows.length}`}
+          </ThemedText>
+        </Pressable>
+      )}
+
+      {showAll && (
+        <ThemedText type="small" themeColor="textSecondary">
+          Neither number is “right”. Watches estimate sleep from movement and heart rate, and
+          it&apos;s common to misjudge time awake at night. Both are saved with their source, and
+          the gaps help personalize your coaching.
+        </ThemedText>
+      )}
     </Card>
   );
 }

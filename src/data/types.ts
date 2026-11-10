@@ -52,4 +52,6 @@ export type Recommendation = {
   evidence: Evidence[];
   /** Until Lyn signs off, every recommendation shows as pending review. */
   clinicalReview: 'pending' | 'reviewed';
+  /** Learn topic that explains the idea behind it. */
+  learnTopic?: string;
 };

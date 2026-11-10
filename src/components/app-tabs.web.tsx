@@ -9,6 +9,7 @@ import {
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { Pressable, View, StyleSheet } from 'react-native';
 
+import { TourTarget } from '@/components/tour/tour-context';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -57,11 +58,13 @@ export function TabButton({ children, isFocused, icon, ref: _ref, ...props }: Ta
           : { borderColor: `${theme.onPrimary}40`, borderWidth: 1.5 },
         pressed && styles.pressed,
       ]}>
-      <SymbolView
-        name={{ web: icon }}
-        size={24}
-        tintColor={isFocused ? theme.primary : theme.onPrimary}
-      />
+      <TourTarget id={`tab-${String(children).toLowerCase()}`}>
+        <SymbolView
+          name={{ web: icon }}
+          size={24}
+          tintColor={isFocused ? theme.primary : theme.onPrimary}
+        />
+      </TourTarget>
     </Pressable>
   );
 }

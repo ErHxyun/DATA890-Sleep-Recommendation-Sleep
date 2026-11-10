@@ -59,6 +59,15 @@ export default function JournalScreen() {
         />
       ))}
 
+      <Pressable
+        onPress={() => router.push({ pathname: '/guide', params: { section: 'tracking' } })}
+        accessibilityRole="link"
+        style={({ pressed }) => [styles.howTo, pressed && styles.pressed]}>
+        <ThemedText type="smallBold" themeColor="accent">
+          How to fill this in: tracking tips →
+        </ThemedText>
+      </Pressable>
+
       <WeekStrip
         past={pastWeek(buildHistory(checkIns.morning?.answers))}
         today={[!!checkIns.morning, !!checkIns.evening]}
@@ -185,6 +194,10 @@ function Dot({ color }: { color: string }) {
 }
 
 const styles = StyleSheet.create({
+  howTo: {
+    alignSelf: 'center',
+    paddingVertical: Spacing.one,
+  },
   flex: {
     flex: 1,
   },

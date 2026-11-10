@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { type SymbolViewProps } from 'expo-symbols';
-import { useState, type ComponentProps } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useEffect, useState, type ComponentProps } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AlignmentCard } from '@/components/alignment-card';
 import { Card } from '@/components/card';
@@ -15,14 +15,16 @@ import { RingChart } from '@/components/ring-chart';
 import { Screen } from '@/components/screen';
 import { SourceBadge } from '@/components/source-badge';
 import { ThemedText } from '@/components/themed-text';
+import { hasSeenTour, TourTarget, useTour } from '@/components/tour/tour-context';
 import { VitalTrend } from '@/components/vital-trend';
 import { FontFamily, Palette, Spacing } from '@/constants/theme';
 import { alignMorningCheckIn } from '@/data/alignment';
 import { buildHistory, type WatchNight } from '@/data/history';
 import { interpretVital, type VitalId } from '@/data/interpretation';
 import { useCheckIns } from '@/data/journal-store';
-import { DEMO_NOTE, HRV_METRIC, lastNight } from '@/data/demo';
+import { DEMO_NOTE, DEMO_PERSONA, HRV_METRIC, lastNight } from '@/data/demo';
 import { todaysRecommendation } from '@/data/recommend';
+import { evaluateSafety } from '@/data/safety';
 import {
   asleepMinutes,
   formatClock,
@@ -66,7 +68,18 @@ export default function TodayScreen() {
   const stageColors = useStageColors();
   const checkIns = useCheckIns();
   const [expandedVital, setExpandedVital] = useState<VitalId | null>(null);
+  const [showTimeline, setShowTimeline] = useState(false);
+  const { start: startTour } = useTour();
+
+  // First visit: walk through the app once. Replay from the guide any time.
+  useEffect(() => {
+    if (hasSeenTour()) return;
+    const timer = setTimeout(startTour, 900);
+    return () => clearTimeout(timer);
+  }, [startTour]);
   const history = buildHistory(checkIns.morning?.answers);
+  const answers = { morning: checkIns.morning?.answers, evening: checkIns.evening?.answers };
+  const safety = evaluateSafety(history, answers.morning);
   const trendNights = history.slice(-TREND_NIGHTS);
 
   /** Last night vs. the usual range of the nights before it, for one vital. */
@@ -168,139 +181,166 @@ export default function TodayScreen() {
   });
 
   return (
-    <Screen title="Good morning" subtitle={dateLabel}>
+    <Screen title={`Good morning, ${DEMO_PERSONA.name}`} subtitle={dateLabel} helpTourId="help">
+      {safety.level !== 'clear' && (
+        <Pressable
+          onPress={() => router.navigate('/coach')}
+          style={({ pressed }) => pressed && styles.pressed}>
+          <Card tone="orangeSoft">
+            <ThemedText type="heading">
+              {safety.level === 'urgent'
+                ? 'You don’t have to go through this alone'
+                : 'Worth checking in with a clinician'}
+            </ThemedText>
+            <ThemedText type="small">
+              {safety.level === 'urgent'
+                ? 'If you are thinking about harming yourself, call or text 988 (US) or your local emergency number now. Sleep coaching is paused.'
+                : 'Something in your recent nights is outside what sleep coaching can address. Tap to see details.'}
+            </ThemedText>
+          </Card>
+        </Pressable>
+      )}
       {/* Last night's watch data stays hidden until the user has given their own account of it. */}
-      {!checkIns.morning ? (
-        <Card style={styles.hero}>
-          <View style={styles.lockedIcon}>
-            <IconCircle
-              icon={{
-                ios: 'sun.horizon.fill',
-                android: 'wb_twilight',
-                web: 'wb_twilight',
-              }}
-              background={Palette.yellow}
-              color={Palette.brown}
-              size={96}
+      <TourTarget id="sleep">
+        {!checkIns.morning ? (
+          <Card style={styles.hero}>
+            <View style={styles.lockedIcon}>
+              <IconCircle
+                icon={{
+                  ios: 'sun.horizon.fill',
+                  android: 'wb_twilight',
+                  web: 'wb_twilight',
+                }}
+                background={Palette.yellow}
+                color={Palette.brown}
+                size={96}
+              />
+            </View>
+            <ThemedText type="subtitle" style={styles.center}>
+              How did you sleep?
+            </ThemedText>
+            <ThemedText themeColor="textSecondary" style={[styles.center, styles.lockedText]}>
+              Tell us how last night felt first. Then we&apos;ll show what your watch measured, side
+              by side with your answers.
+            </ThemedText>
+            <PrimaryButton
+              label="Start morning check-in"
+              onPress={() =>
+                router.push({
+                  pathname: '/check-in/[kind]',
+                  params: { kind: 'morning' },
+                })
+              }
             />
-          </View>
-          <ThemedText type="subtitle" style={styles.center}>
-            How did you sleep?
-          </ThemedText>
-          <ThemedText themeColor="textSecondary" style={[styles.center, styles.lockedText]}>
-            Tell us how last night felt first. Then we&apos;ll show what your watch measured, side
-            by side with your answers.
-          </ThemedText>
-          <PrimaryButton
-            label="Start morning check-in"
-            onPress={() =>
-              router.push({
-                pathname: '/check-in/[kind]',
-                params: { kind: 'morning' },
-              })
-            }
-          />
-        </Card>
-      ) : (
-        <Card style={styles.hero}>
-          <ThemedText type="heading" style={styles.center}>
-            You slept for
-          </ThemedText>
-          <View style={styles.hoursRow}>
-            <ThemedText style={styles.hours}>{(asleep / 60).toFixed(1)}</ThemedText>
-            <ThemedText style={[styles.hoursUnit, { color: theme.textSecondary }]}>h</ThemedText>
-          </View>
-          <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
-            {formatClock(lastNight.inBedStart)} – {formatClock(lastNight.inBedEnd)} · {efficiency}%
-            efficiency
-          </ThemedText>
+          </Card>
+        ) : (
+          <Card style={styles.hero}>
+            <ThemedText type="heading" style={styles.center}>
+              You slept for
+            </ThemedText>
+            <View style={styles.hoursRow}>
+              <ThemedText style={styles.hours}>{(asleep / 60).toFixed(1)}</ThemedText>
+              <ThemedText style={[styles.hoursUnit, { color: theme.textSecondary }]}>h</ThemedText>
+            </View>
+            <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
+              {formatClock(lastNight.inBedStart)} – {formatClock(lastNight.inBedEnd)} · {efficiency}
+              % efficiency
+            </ThemedText>
 
-          <View style={styles.ringWrap}>
-            <RingChart
-              rings={STAGES.map(({ stage }) => ({
-                key: stage,
-                color: stageColors[stage],
-                value: totals[stage] / asleep,
-              }))}>
-              <ThemedText type="smallBold" themeColor="textSecondary">
-                Awake
-              </ThemedText>
-              <ThemedText type="heading">{formatDuration(totals.awake)}</ThemedText>
-            </RingChart>
-          </View>
-
-          <View style={styles.stageRow}>
-            {STAGES.map(({ stage, label, icon }) => (
-              <View key={stage} style={styles.stage}>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {label}
+            <View style={styles.ringWrap}>
+              <RingChart
+                rings={STAGES.map(({ stage }) => ({
+                  key: stage,
+                  color: stageColors[stage],
+                  value: totals[stage] / asleep,
+                }))}>
+                <ThemedText type="smallBold" themeColor="textSecondary">
+                  Awake
                 </ThemedText>
-                <ThemedText style={styles.stageValue}>{formatDuration(totals[stage])}</ThemedText>
-                <IconCircle
-                  icon={icon}
-                  background={stageColors[stage]}
-                  color={stage === 'rem' ? Palette.brown : '#FFFFFF'}
-                  size={48}
-                />
-              </View>
-            ))}
-          </View>
-        </Card>
+                <ThemedText type="heading">{formatDuration(totals.awake)}</ThemedText>
+              </RingChart>
+            </View>
+
+            <View style={styles.stageRow}>
+              {STAGES.map(({ stage, label, icon }) => (
+                <View key={stage} style={styles.stage}>
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {label}
+                  </ThemedText>
+                  <ThemedText style={styles.stageValue}>{formatDuration(totals[stage])}</ThemedText>
+                  <IconCircle
+                    icon={icon}
+                    background={stageColors[stage]}
+                    color={stage === 'rem' ? Palette.brown : '#FFFFFF'}
+                    size={48}
+                  />
+                </View>
+              ))}
+            </View>
+
+            <Pressable
+              onPress={() => setShowTimeline((value) => !value)}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: showTimeline }}
+              style={({ pressed }) => [styles.timelineToggle, pressed && styles.pressed]}>
+              <ThemedText type="smallBold" themeColor="accent">
+                {showTimeline ? 'Hide timeline' : 'Show timeline'}
+              </ThemedText>
+              <SourceBadge source="watch" />
+            </Pressable>
+            {showTimeline && <Hypnogram night={lastNight} />}
+          </Card>
+        )}
+      </TourTarget>
+
+      {safety.level !== 'urgent' && (
+        <TourTarget id="focus">
+          <RecommendationCard recommendation={todaysRecommendation(history, answers)} />
+        </TourTarget>
       )}
 
       {checkIns.morning && (
-        <AlignmentCard rows={alignMorningCheckIn(checkIns.morning.answers, lastNight)} />
+        <AlignmentCard rows={alignMorningCheckIn(checkIns.morning.answers, lastNight)} compact />
       )}
-
-      <RecommendationCard recommendation={todaysRecommendation(history)} />
 
       <ThemedText type="heading" style={styles.sectionLabel}>
         Overnight vitals
       </ThemedText>
-      <View style={styles.grid}>
-        {vitals.map((vital) => (
-          <MetricTile
-            key={vital.id}
-            {...vital.tile}
-            source="watch"
-            expanded={expandedVital === vital.id}
-            onToggle={() => setExpandedVital((current) => (current === vital.id ? null : vital.id))}
-            trend={
-              <>
-                <VitalTrend
-                  points={trendNights.map((n) => ({ date: n.date, value: vital.pick(n.watch) }))}
-                  format={vital.format}
-                />
-                <InterpretationPanel
-                  interpretation={interpretVital({
-                    id: vital.id,
-                    pick: vital.pick,
-                    format: vital.format,
-                    trendNights,
-                    allNights: history,
-                  })}
-                />
-              </>
-            }
-          />
-        ))}
-      </View>
-
-      {checkIns.morning && (
-        <Card>
-          <View style={styles.cardHeader}>
-            <ThemedText type="heading">Sleep timeline</ThemedText>
-            <SourceBadge source="watch" />
-          </View>
-          <Hypnogram night={lastNight} />
-        </Card>
-      )}
+      <TourTarget id="vitals">
+        <View style={styles.grid}>
+          {vitals.map((vital) => (
+            <MetricTile
+              key={vital.id}
+              {...vital.tile}
+              source="watch"
+              expanded={expandedVital === vital.id}
+              onToggle={() =>
+                setExpandedVital((current) => (current === vital.id ? null : vital.id))
+              }
+              trend={
+                <>
+                  <VitalTrend
+                    points={trendNights.map((n) => ({ date: n.date, value: vital.pick(n.watch) }))}
+                    format={vital.format}
+                  />
+                  <InterpretationPanel
+                    interpretation={interpretVital({
+                      id: vital.id,
+                      pick: vital.pick,
+                      format: vital.format,
+                      trendNights,
+                      allNights: history,
+                    })}
+                  />
+                </>
+              }
+            />
+          ))}
+        </View>
+      </TourTarget>
 
       <ThemedText type="small" themeColor="textSecondary" style={styles.disclaimer}>
-        Sleep by Science offers behavioral sleep coaching and is not a medical device. Wearable
-        sleep stages are estimates and can differ from a clinical sleep study.
-      </ThemedText>
-      <ThemedText type="small" themeColor="textSecondary" style={styles.disclaimer}>
+        Behavioral sleep coaching, not a medical device; watch sleep stages are estimates.{' '}
         {DEMO_NOTE}
       </ThemedText>
     </Screen>
@@ -308,6 +348,9 @@ export default function TodayScreen() {
 }
 
 const styles = StyleSheet.create({
+  pressed: {
+    opacity: 0.8,
+  },
   center: {
     textAlign: 'center',
   },
@@ -342,6 +385,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Spacing.four,
   },
+  timelineToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   stageRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -365,11 +413,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     rowGap: Spacing.three,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
   },
   disclaimer: {
     textAlign: 'center',

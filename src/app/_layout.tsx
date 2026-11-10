@@ -8,7 +8,10 @@ import {
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
 
+import { TourProvider } from '@/components/tour/tour-context';
+import { TourOverlay } from '@/components/tour/tour-overlay';
 import { restoreColorScheme, useColorScheme } from '@/hooks/use-color-scheme';
 
 SplashScreen.preventAutoHideAsync();
@@ -35,10 +38,23 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="check-in/[kind]" />
-      </Stack>
+      <TourProvider>
+        <View style={styles.root}>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="check-in/[kind]" />
+            <Stack.Screen name="topic/[id]" />
+            <Stack.Screen name="guide" />
+          </Stack>
+          <TourOverlay />
+        </View>
+      </TourProvider>
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+});

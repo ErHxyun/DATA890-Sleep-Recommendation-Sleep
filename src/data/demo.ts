@@ -19,6 +19,12 @@ export type DemoNight = (typeof demoUser.nights)[number];
 
 export const DEMO_META = demoUser.meta;
 
+/** The person the demo is presented as. Their nights are PMData participant p06's. */
+export const DEMO_PERSONA = {
+  name: 'Sam',
+  basedOn: `PMData participant ${demoUser.meta.sources.pmdata.participant}`,
+};
+
 /** HRV metric and device for labels, e.g. "HRV (RMSSD)" and "Fitbit". */
 export const HRV_METRIC = demoUser.meta.hrvMetric;
 export const DEVICE_LABEL = demoUser.meta.device;
@@ -39,6 +45,16 @@ function addMinutes(date: Date, minutes: number) {
   return new Date(date.getTime() + minutes * 60_000);
 }
 
+/**
+ * Wall-clock time `minutes` after (or before) midnight on `day`. Setting the clock fields
+ * rather than adding milliseconds keeps 4:02 AM at 4:02 AM on daylight-saving nights.
+ */
+function clockTime(day: Date, minutes: number) {
+  const date = new Date(day);
+  date.setHours(0, minutes, 0, 0);
+  return date;
+}
+
 /** The morning a demo night ends on, relative to today. */
 export function wakeDateOf(night: DemoNight) {
   const date = new Date();
@@ -49,7 +65,7 @@ export function wakeDateOf(night: DemoNight) {
 
 export function summarize(night: DemoNight): NightSummary {
   const wakeDate = wakeDateOf(night);
-  const inBedStart = addMinutes(wakeDate, night.bedMin);
+  const inBedStart = clockTime(wakeDate, night.bedMin);
   const segments: SleepSegment[] = night.segments.map(([stage, start, duration]) => ({
     stage: stage as SleepStage,
     start: addMinutes(inBedStart, start as number),
@@ -58,7 +74,7 @@ export function summarize(night: DemoNight): NightSummary {
   return {
     wakeDate,
     inBedStart,
-    inBedEnd: addMinutes(wakeDate, night.outMin),
+    inBedEnd: clockTime(wakeDate, night.outMin),
     segments,
     wakings: night.wakings,
     awakeMinutes: night.awakeMin,
